@@ -4,7 +4,38 @@ INPUT_DIM = 4
 OUT_DIM = 3
 H_DIM = 10
 
+
+def relu(t):
+    '''
+    максимум из пришедшего значения и нуля
+    '''
+    return np.maximum(t, 0)
+
+
+def softmax(t):
+    out = np.exp(t)
+    return out / np.sum(out)
+
+
+def sparse_cross_entropy(z, y):
+    return -np.log(
+        z[0, y])  # должна быть более длинная формала Е = суммаi Yi * log Zi
+
+
+def to_full(y, num_classes):
+    y_full = np.zeros((1,
+                       num_classes))  # создаем вектор-строку, размерность
+    # колличество классов
+    y_full[0, y] = 1  # в индекс игрик присвоем единичку
+    return y_full  # возвращаем вектор
+
+
+def relu_deriv(t):
+    return (t >= 0).astype(float)
+
+
 x = np.array([7.9, 3.1, 7.5, 1.8])  # входной вектор
+y =  # вектор истинного распределения
 
 W1 = np.array([[0.33462099, 0.10068401, 0.20557238, -0.19043767, 0.40249301,
                 -0.00925352, 0.00628916, 0.74784975, 0.25069956, -0.09290041],
@@ -36,27 +67,28 @@ W2 = np.array([[0.41186367, 0.15406952, -0.47391773],
 b2 = np.array(
     [-0.16286677, 0.06680119, -0.03563594])  # Вектор смещения второго слоя
 
+ALPHA = 0.001  # Скорость обучения
+# Forward прямое распространение ошибки
+t1 = x @ W1 + b1
+h1 = relu(t1)
+t2 = h1 @ W2 + b2
+z = softmax(t2)  # Вероятности прдсказанные нашей моделью
+E = sparse_cross_entropy(z, y)  # Разреженная крос энтропия
 
-def relu(t):
-    '''
-    максимум из пришедшего значения и нуля
-    '''
-    return np.maximum(t, 0)
+# Backward обратное распространение ошибки
+y_full = to_full(y,
+                 OUT_DIM)  # Полный вектор правильного ответа, будет превращать
+dE_dt2 = z - y_full
+dE_dW2 = h1.T @ dE_dt2
+dE_db2 = dE_dt2
+dE_dh1 = dE_dt2 @ W2.T
+dE_dt1 = dE_dh1 * relu_deriv(t1)
+dE_dW1 = x.T @ dE_dt1
+dE_db1 = dE_dt1
 
-
-def softmax(t):
-    out = np.exp(t)
-    return out / np.sum(out)
-
-
-def predict(x):
-    t1 = x @ W1 + b1
-    h1 = relu(t1)
-    t2 = h1 @ W2 + b2
-    z = softmax(t2)
-    return z
-
-
+# Update
+W1 = W1 - ALPHA * dE_dW1 # обновление весов
+# индекс правильного класса в вектор из нулей и единицы
 probs = predict(x)
 pred_class = np.argmax(probs)
 class_names = ['Setosa', 'Versicolor', 'Virginica']
