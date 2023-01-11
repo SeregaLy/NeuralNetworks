@@ -61,7 +61,7 @@ b1 = (b1 - 0.5) * 2 * np.sqrt(1 / INPUT_DIM)
 W2 = (W2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
 b2 = (b2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
 
-ALPHA = 0.0002 #
+ALPHA = 0.0002 # Скорость обучения
 NUM_EPOCHS = 400 #  Колличество эпох
 BATCH_SIZE = 50 #
 
@@ -75,15 +75,15 @@ for ep in range(NUM_EPOCHS): #
         x = np.concatenate(batch_x, axis=0)
         y = np.array(batch_y)
 
-        # Forward #
+        # Forward прямое распространение ошибки
         t1 = x @ W1 + b1
         h1 = relu(t1)
         t2 = h1 @ W2 + b2
-        z = softmax_batch(t2)
-        E = np.sum(sparse_cross_entropy_batch(z, y))
+        z = softmax_batch(t2) # Вероятности прдсказанные нашей моделью
+        E = np.sum(sparse_cross_entropy_batch(z, y)) # Разреженная крос энтропия
 
-        # Backward #
-        y_full = to_full_batch(y, OUT_DIM)
+        # Backward обратное распространение ошибки
+        y_full = to_full_batch(y, OUT_DIM) # Полный вектор правильного ответа, будет превращать
         dE_dt2 = z - y_full
         dE_dW2 = h1.T @ dE_dt2
         dE_db2 = np.sum(dE_dt2, axis=0, keepdims=True)
@@ -92,7 +92,7 @@ for ep in range(NUM_EPOCHS): #
         dE_dW1 = x.T @ dE_dt1
         dE_db1 = np.sum(dE_dt1, axis=0, keepdims=True)
 
-        # Update #
+        # Update  обновление весов
         W1 = W1 - ALPHA * dE_dW1
         b1 = b1 - ALPHA * dE_db1
         W2 = W2 - ALPHA * dE_dW2
