@@ -1,15 +1,13 @@
+import random
 import numpy as np
 
-INPUT_DIM = 4
-OUT_DIM = 3
-H_DIM = 10
+INPUT_DIM = 4 # Колличество входных параметров
+OUT_DIM = 3 # Колличество скрытых слоев
+H_DIM = 10 #  Колличество нейронов в слое
 
 
 def relu(t):
-    '''
-    максимум из пришедшего значения и нуля
-    '''
-    return np.maximum(t, 0)
+    return np.maximum(t, 0) # максимум из пришедшего значения и нуля
 
 
 def softmax(t):
@@ -17,79 +15,115 @@ def softmax(t):
     return out / np.sum(out)
 
 
+def softmax_batch(t):
+    out = np.exp(t)
+    return out / np.sum(out, axis=1, keepdims=True)
+
+
 def sparse_cross_entropy(z, y):
-    return -np.log(
-        z[0, y])  # должна быть более длинная формала Е = суммаi Yi * log Zi
+    return -np.log(z[0, y])
+
+
+def sparse_cross_entropy_batch(z, y):
+    return -np.log(np.array([z[j, y[j]] for j in range(len(y))]))
 
 
 def to_full(y, num_classes):
-    y_full = np.zeros((1,
-                       num_classes))  # создаем вектор-строку, размерность
-    # колличество классов
-    y_full[0, y] = 1  # в индекс игрик присвоем единичку
-    return y_full  # возвращаем вектор
+    y_full = np.zeros((1, num_classes))
+    y_full[0, y] = 1
+    return y_full
+
+
+def to_full_batch(y, num_classes):
+    y_full = np.zeros((len(y), num_classes))
+    for j, yj in enumerate(y):
+        y_full[j, yj] = 1
+    return y_full
 
 
 def relu_deriv(t):
     return (t >= 0).astype(float)
 
 
-x = np.array([7.9, 3.1, 7.5, 1.8])  # входной вектор
-y =  # вектор истинного распределения
+from sklearn import datasets
 
-W1 = np.array([[0.33462099, 0.10068401, 0.20557238, -0.19043767, 0.40249301,
-                -0.00925352, 0.00628916, 0.74784975, 0.25069956, -0.09290041],
-               [0.41689589, 0.93211640, -0.32300143, -0.13845456, 0.58598293,
-                -0.29140373, -0.28473491, 0.48021000, -0.32318306,
-                -0.34146461],
-               [-0.21927019, -0.76135162, -0.11721704, 0.92123373, 0.19501658,
-                0.00904006, 1.03040632, -0.66867859, -0.01571104, -0.08372566],
-               [-0.67791724, 0.07044558, -0.40981071, 0.62098450, -0.33009159,
-                -0.47352435, 0.09687051, -0.68724299, 0.43823402,
-                -0.26574543]])  # первый слой матрицы весов
+iris = datasets.load_iris()
+dataset = [(iris.data[i][None, ...], iris.target[i]) for i in
+           range(len(iris.target))]
 
-b1 = np.array([-0.34133575, -0.24401602, -0.06262318, -0.30410971, -0.37097632,
-               0.02670964, -0.51851308, 0.54665141, 0.20777536,
-               -0.29905165])  # Вектор смещения
+W1 = np.random.rand(INPUT_DIM, H_DIM) # первый слой матрицы весов
+b1 = np.random.rand(1, H_DIM) # Вектор смещения
+W2 = np.random.rand(H_DIM, OUT_DIM) # второй слой матрицы весов
+b2 = np.random.rand(1, OUT_DIM) # Вектор смещения второго слоя
 
-W2 = np.array([[0.41186367, 0.15406952, -0.47391773],
-               [0.79701137, -0.64672799, -0.06339983],
-               [-0.20137522, -0.07088810, 0.00212071],
-               [-0.58743081, -0.17363843, 0.93769169],
-               [0.33262125, 0.18999841, -0.14977653],
-               [0.04450406, 0.26168097, 0.10104333],
-               [-0.74384144, 0.33092591, 0.65464737],
-               [0.45764631, 0.48877246, -1.16928700],
-               [-0.16020630, -0.12369116, 0.14171301],
-               [0.26099978, 0.12834471,
-                0.20866959]])  # второй слой матрицы весов
+W1 = (W1 - 0.5) * 2 * np.sqrt(1 / INPUT_DIM)
+b1 = (b1 - 0.5) * 2 * np.sqrt(1 / INPUT_DIM)
+W2 = (W2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
+b2 = (b2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
 
-b2 = np.array(
-    [-0.16286677, 0.06680119, -0.03563594])  # Вектор смещения второго слоя
+ALPHA = 0.0002 #
+NUM_EPOCHS = 400 #  Колличество эпох
+BATCH_SIZE = 50 #
 
-ALPHA = 0.001  # Скорость обучения
-# Forward прямое распространение ошибки
-t1 = x @ W1 + b1
-h1 = relu(t1)
-t2 = h1 @ W2 + b2
-z = softmax(t2)  # Вероятности прдсказанные нашей моделью
-E = sparse_cross_entropy(z, y)  # Разреженная крос энтропия
+loss_arr = []
 
-# Backward обратное распространение ошибки
-y_full = to_full(y,
-                 OUT_DIM)  # Полный вектор правильного ответа, будет превращать
-dE_dt2 = z - y_full
-dE_dW2 = h1.T @ dE_dt2
-dE_db2 = dE_dt2
-dE_dh1 = dE_dt2 @ W2.T
-dE_dt1 = dE_dh1 * relu_deriv(t1)
-dE_dW1 = x.T @ dE_dt1
-dE_db1 = dE_dt1
+for ep in range(NUM_EPOCHS): #
+    random.shuffle(dataset) #  Перемешиваем датасет каждую эпоху
+    for i in range(len(dataset) // BATCH_SIZE): #
+        batch_x, batch_y = zip(
+            *dataset[i * BATCH_SIZE: i * BATCH_SIZE + BATCH_SIZE])
+        x = np.concatenate(batch_x, axis=0)
+        y = np.array(batch_y)
 
-# Update
-W1 = W1 - ALPHA * dE_dW1 # обновление весов
-# индекс правильного класса в вектор из нулей и единицы
-probs = predict(x)
-pred_class = np.argmax(probs)
-class_names = ['Setosa', 'Versicolor', 'Virginica']
-print('Predicted class:', class_names[pred_class])
+        # Forward #
+        t1 = x @ W1 + b1
+        h1 = relu(t1)
+        t2 = h1 @ W2 + b2
+        z = softmax_batch(t2)
+        E = np.sum(sparse_cross_entropy_batch(z, y))
+
+        # Backward #
+        y_full = to_full_batch(y, OUT_DIM)
+        dE_dt2 = z - y_full
+        dE_dW2 = h1.T @ dE_dt2
+        dE_db2 = np.sum(dE_dt2, axis=0, keepdims=True)
+        dE_dh1 = dE_dt2 @ W2.T
+        dE_dt1 = dE_dh1 * relu_deriv(t1)
+        dE_dW1 = x.T @ dE_dt1
+        dE_db1 = np.sum(dE_dt1, axis=0, keepdims=True)
+
+        # Update #
+        W1 = W1 - ALPHA * dE_dW1
+        b1 = b1 - ALPHA * dE_db1
+        W2 = W2 - ALPHA * dE_dW2
+        b2 = b2 - ALPHA * dE_db2
+
+        loss_arr.append(E)
+
+
+def predict(x):
+    t1 = x @ W1 + b1
+    h1 = relu(t1)
+    t2 = h1 @ W2 + b2
+    z = softmax_batch(t2)
+    return z
+
+
+def calc_accuracy(): #
+    correct = 0
+    for x, y in dataset:
+        z = predict(x)
+        y_pred = np.argmax(z)
+        if y_pred == y:
+            correct += 1
+    acc = correct / len(dataset)
+    return acc
+
+
+accuracy = calc_accuracy()
+print("Accuracy:", accuracy)
+
+import matplotlib.pyplot as plt
+
+plt.plot(loss_arr) # Создаем график улучшения точности распознавания
+plt.show()
