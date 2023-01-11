@@ -1,13 +1,13 @@
 import random
 import numpy as np
 
-INPUT_DIM = 4 # Колличество входных параметров
-OUT_DIM = 3 # Колличество скрытых слоев
-H_DIM = 10 #  Колличество нейронов в слое
+INPUT_DIM = 4  # Колличество входных параметров
+OUT_DIM = 3  # Колличество скрытых слоев
+H_DIM = 10  # Колличество нейронов в слое
 
 
 def relu(t):
-    return np.maximum(t, 0) # максимум из пришедшего значения и нуля
+    return np.maximum(t, 0)  # максимум из пришедшего значения и нуля
 
 
 def softmax(t):
@@ -51,25 +51,25 @@ iris = datasets.load_iris()
 dataset = [(iris.data[i][None, ...], iris.target[i]) for i in
            range(len(iris.target))]
 
-W1 = np.random.rand(INPUT_DIM, H_DIM) # первый слой матрицы весов
-b1 = np.random.rand(1, H_DIM) # Вектор смещения
-W2 = np.random.rand(H_DIM, OUT_DIM) # второй слой матрицы весов
-b2 = np.random.rand(1, OUT_DIM) # Вектор смещения второго слоя
+W1 = np.random.rand(INPUT_DIM, H_DIM)  # первый слой матрицы весов
+b1 = np.random.rand(1, H_DIM)  # Вектор смещения
+W2 = np.random.rand(H_DIM, OUT_DIM)  # второй слой матрицы весов
+b2 = np.random.rand(1, OUT_DIM)  # Вектор смещения второго слоя
 
 W1 = (W1 - 0.5) * 2 * np.sqrt(1 / INPUT_DIM)
 b1 = (b1 - 0.5) * 2 * np.sqrt(1 / INPUT_DIM)
 W2 = (W2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
 b2 = (b2 - 0.5) * 2 * np.sqrt(1 / H_DIM)
 
-ALPHA = 0.0002 # Скорость обучения
-NUM_EPOCHS = 400 #  Колличество эпох
-BATCH_SIZE = 50 #
+ALPHA = 0.0002  # Скорость обучения
+NUM_EPOCHS = 400  # Колличество эпох
+BATCH_SIZE = 50  #
 
 loss_arr = []
 
-for ep in range(NUM_EPOCHS): #
-    random.shuffle(dataset) #  Перемешиваем датасет каждую эпоху
-    for i in range(len(dataset) // BATCH_SIZE): #
+for ep in range(NUM_EPOCHS):  #
+    random.shuffle(dataset)  # Перемешиваем датасет каждую эпоху
+    for i in range(len(dataset) // BATCH_SIZE):  #
         batch_x, batch_y = zip(
             *dataset[i * BATCH_SIZE: i * BATCH_SIZE + BATCH_SIZE])
         x = np.concatenate(batch_x, axis=0)
@@ -79,11 +79,13 @@ for ep in range(NUM_EPOCHS): #
         t1 = x @ W1 + b1
         h1 = relu(t1)
         t2 = h1 @ W2 + b2
-        z = softmax_batch(t2) # Вероятности прдсказанные нашей моделью
-        E = np.sum(sparse_cross_entropy_batch(z, y)) # Разреженная крос энтропия
+        z = softmax_batch(t2)  # Вероятности прдсказанные нашей моделью
+        E = np.sum(
+            sparse_cross_entropy_batch(z, y))  # Разреженная крос энтропия
 
         # Backward обратное распространение ошибки
-        y_full = to_full_batch(y, OUT_DIM) # Полный вектор правильного ответа, будет превращать
+        y_full = to_full_batch(y,
+                               OUT_DIM)  # Полный вектор правильного ответа, будет превращать
         dE_dt2 = z - y_full
         dE_dW2 = h1.T @ dE_dt2
         dE_db2 = np.sum(dE_dt2, axis=0, keepdims=True)
@@ -109,7 +111,7 @@ def predict(x):
     return z
 
 
-def calc_accuracy(): #
+def calc_accuracy():  #
     correct = 0
     for x, y in dataset:
         z = predict(x)
@@ -125,5 +127,5 @@ print("Accuracy:", accuracy)
 
 import matplotlib.pyplot as plt
 
-plt.plot(loss_arr) # Создаем график улучшения точности распознавания
+plt.plot(loss_arr)  # Создаем график улучшения точности распознавания
 plt.show()
